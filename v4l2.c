@@ -175,9 +175,9 @@ void main_loop(V4l2Context *ctx)
                 r = select(fd + 1, &rdset, NULL, NULL, &tv);
 
                 if(r > 0)
-                {   
+                {      
                         if(read_frame(ctx) == -2)
-                                break;
+                                break;  
                 }
                 else if(r == 0)
                 {
@@ -335,7 +335,7 @@ int read_frame(V4l2Context *ctx)
                                 return -1;
                         }
                 }
-                if(!ctx->process_image((uint8_t*)ctx->buffers[0].start, ctx->buffers[0].length))
+                if(!(ctx->process_image)((uint8_t*)ctx->buffers[0].start, ctx->buffers[0].length))
                 {
                         return -2;
                 }
@@ -353,15 +353,15 @@ int read_frame(V4l2Context *ctx)
                         {
                                 return 0;
                         }
-                else
-                {
-                        fprintf(stderr, "set VIDIOC_DQBUF failed: %d, %s\n", errno, strerror(errno));
-                        return -1;
-                }
+                        else
+                        {
+                                fprintf(stderr, "set VIDIOC_DQBUF failed: %d, %s\n", errno, strerror(errno));
+                                return -1;
+                        }
                 }
                 if(buf.index < ctx->n_buffers)
                 {
-                        if(!process_image((uint8_t*)ctx->buffers[buf.index].start, buf.bytesused))
+                        if(!(ctx->process_image)((uint8_t*)ctx->buffers[buf.index].start, buf.bytesused))
                         {
                                 return -2;
                         }
