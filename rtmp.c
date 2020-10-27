@@ -18,6 +18,9 @@ static int frame_index=0;
 static int64_t start_time=0;
 static char *infile_name = "/tmp/output.h264";
 static int ceshi;
+static AVFormatContext *ic = NULL;
+static FILE* fp_open;
+
 
 // int main(int argc,char* argv[])
 // {
@@ -110,6 +113,7 @@ static int ceshi;
 
 //         return 0;
 // }
+// static _Bool flag = 0;
 
 int write_frame(uint8_t*data,int size)
 {
@@ -136,6 +140,27 @@ enum AVPixelFormat get_format(struct AVCodecContext *s, const enum AVPixelFormat
         return s->pix_fmt;
 }
 
+int fill_iobuffer(void * opaque,uint8_t *buf, int buf_size){
+	printf("Enter!");
+	// if(!flag)
+        // {
+        //         fread(buf,1,2780,fp_open);
+        //         flag = !flag;
+        // }	
+        // else{
+        //         return -1;
+        // }
+	if(!feof(fp_open)){
+		int true_size=fread(buf,1,buf_size,fp_open);
+                printf("%d\n",true_size);
+		return true_size;
+	}else{
+                printf("Exit!");
+		return -1;
+	}
+                
+
+}
 
 int init_rtmp_streamer()
 {
@@ -147,6 +172,15 @@ int init_rtmp_streamer()
                 fprintf(stderr, "avformat_network_init failed!");
                 return -1;
         }
+        fp_open = fopen("/tmp/output.h264", "rb+");
+        ic = avformat_alloc_context();
+        unsigned char *iobuffer = (unsigned char *)av_malloc(3276800);
+        AVIOContext *avio = avio_alloc_context(iobuffer,3276800,0,NULL,fill_iobuffer,NULL,NULL);
+        ic->pb = avio;
+
+
+        printf("hello here \n");
+
 
         avformat_alloc_output_context2(&ofmt_ctx,NULL,"flv",outfile_name);
         if(!ofmt_ctx)
@@ -155,18 +189,18 @@ int init_rtmp_streamer()
                 return -1;
         }
         ofmt = ofmt_ctx->oformat;
-
-        if((ret = avformat_open_input(&ifmt_ctx,infile_name,0,0)) < 0)
+        
+        if((ret = avformat_open_input(&ic,NULL,0,0)) < 0)
         {
                 fprintf(stderr, "Could not open input file '%s' %d", infile_name,ret);
                 return -1;
         }
-
+        ifmt_ctx = ic;
         if ((ret = avformat_find_stream_info(ifmt_ctx, 0)) < 0) {
 		fprintf(stderr, "Failed to retrieve input stream information");
 		return -1;
         }
-        av_dump_format(ifmt_ctx, 0, infile_name, 0);
+        //av_dump_format(ifmt_ctx, 0, infile_name, 0);
 
 
 
@@ -220,12 +254,12 @@ int init_rtmp_streamer()
         // codec_ctx->code
         out_stream->codec = codec_ctx;
         
-        // ret = avcodec_copy_context(out_stream->codec,ifmt_ctx->streams[0]->codec);
-        // if(ret < 0)
-        // {
-        //         printf("Fail to copy context from out stream to input stream!\n");
-        //         goto end;
-        // }
+        ret = avcodec_copy_context(out_stream->codec,ifmt_ctx->streams[0]->codec);
+        if(ret < 0)
+        {
+                printf("Fail to copy context from out stream to input stream!\n");
+                goto end;
+        }
         
 
         out_stream->codec->codec_tag = 0;
