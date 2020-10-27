@@ -69,7 +69,9 @@ typedef struct {
 
 void init_mpp(MpiEncData *mpp_enc_data);
 _Bool process_image(uint8_t *p, int size,MpiEncData *mpp_enc_data);
+_Bool write_header(MpiEncData *mpp_enc_data);
 extern int write_frame(uint8_t*data,int size);
+
 
 
 

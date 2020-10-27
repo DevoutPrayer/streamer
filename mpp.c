@@ -158,37 +158,7 @@ void init_mpp(MpiEncData *mpp_enc_data)
 		goto MPP_INIT_OUT;
 	}
 
-	if (mpp_enc_data->type == MPP_VIDEO_CodingAVC)
-	{
-		MppPacket packet = NULL;
-		ret = mpp_enc_data->mpi->control(mpp_enc_data->ctx, MPP_ENC_GET_EXTRA_INFO, &packet);
-		if (ret)
-		{
-			printf("mpi control enc get extra info failed\n");
-			goto MPP_INIT_OUT;
-		}
-
-		/* get and write sps/pps for H.264 */
-		if (packet)
-		{
-
-			void *ptr   = mpp_packet_get_pos(packet);
-			size_t len  = mpp_packet_get_length(packet);
-
-			// if (mpp_enc_data->fp_output)
-                        // {
-
-                        //         printf("--%d\n",mpp_enc_data->write_frame);
-                        //         write_frame(ptr,len);
-                        //         (mpp_enc_data->write_frame)(ptr,len);
-                        //         write(ptr, 1, len, mpp_enc_data->fp_output);
-                        // }
-                        if(mpp_enc_data->write_frame)
-                                if(!(mpp_enc_data->write_frame)(ptr,len))
-                                                printf("------------sendok!\n");
-			packet = NULL;
-		}
-	}
+	
 
 	return 0;
 
@@ -207,6 +177,40 @@ MPP_INIT_OUT:
         }
 
         printf("init mpp failed!\n");
+}
+
+_Bool write_header(MpiEncData *mpp_enc_data)
+{
+        int ret;
+        if (mpp_enc_data->type == MPP_VIDEO_CodingAVC)
+	{
+		MppPacket packet = NULL;
+		ret = mpp_enc_data->mpi->control(mpp_enc_data->ctx, MPP_ENC_GET_EXTRA_INFO, &packet);
+		if (ret)
+		{
+			printf("mpi control enc get extra info failed\n");
+			return 1;
+		}
+
+		/* get and write sps/pps for H.264 */
+		if (packet)
+		{
+
+			void *ptr   = mpp_packet_get_pos(packet);
+			size_t len  = mpp_packet_get_length(packet);
+
+			if (mpp_enc_data->fp_output)
+                        {
+                                fwrite(ptr, 1, len, mpp_enc_data->fp_output);
+                                return 0;
+                        }
+                        // if(mpp_enc_data->write_frame)
+                        //         if(!(mpp_enc_data->write_frame)(ptr,len))
+                        //                         printf("------------sendok!\n");
+			packet = NULL;
+		}
+	}
+        return 1;
 }
 
 _Bool process_image(uint8_t *p, int size,MpiEncData *mpp_enc_data)
@@ -263,10 +267,10 @@ mdddd:
                 void *ptr   = mpp_packet_get_pos(packet);
                 size_t len  = mpp_packet_get_length(packet);
                 mpp_enc_data->pkt_eos = mpp_packet_get_eos(packet);
-                // if (mpp_enc_data->fp_output)
-                // {
-                // 	fwrite(ptr, 1, len, mpp_enc_data.fp_output);   
-                // }
+                if (mpp_enc_data->fp_output)
+                {
+                	fwrite(ptr, 1, len, mpp_enc_data->fp_output);   
+                }
                 if(mpp_enc_data->write_frame)
                         if(!(mpp_enc_data->write_frame)(ptr,len))
                                         printf("------------sendok!\n");
@@ -283,9 +287,9 @@ mdddd:
         }
         else
                 goto mdddd;
-        // if (mpp_enc_data.num_frames && mpp_enc_data.frame_count >= mpp_enc_data.num_frames)
+        // if (mpp_enc_data->num_frames && mpp_enc_data->frame_count >= mpp_enc_data->num_frames)
         // {
-        // 	printf("encode max %d frames", mpp_enc_data.frame_count);
+        // 	printf("encode max %d frames", mpp_enc_data->frame_count);
         // 	return 0;
         // }
         if (mpp_enc_data->frm_eos && mpp_enc_data->pkt_eos)

@@ -21,9 +21,15 @@ MpiEncData          mpp_enc_data;
 
 
 _Bool m_process_image(uint8_t *p, int size)
-{
-        
+{ 
         return process_image(p,size,&mpp_enc_data);
+}
+
+void write_h264_para_file(StreamerContext *ctx)
+{
+        ctx->mpp_enc_data->fp_output = fopen("/tmp/output.h264", "wb+");
+        write_header(ctx->mpp_enc_data);
+        fclose(ctx->mpp_enc_data->fp_output);
 }
 
 void stop(V4l2Context*);
@@ -31,22 +37,28 @@ int main()
 {
         StreamerContext     streamer_ctx;
         V4l2Context         v4l2_ctx;
+
         memset(&streamer_ctx, 0, sizeof(streamer_ctx));
         memset(&v4l2_ctx, 0, sizeof(v4l2_ctx));
         memset(&mpp_enc_data, 0, sizeof(mpp_enc_data));
+        streamer_ctx.v4l2_ctx = &v4l2_ctx;
+        streamer_ctx.mpp_enc_data = &mpp_enc_data;
         v4l2_ctx.process_image = m_process_image;
+        v4l2_ctx.force_format = 1;
+        v4l2_ctx.width = 640;
+        v4l2_ctx.height  = 480;
+        v4l2_ctx.pixelformat = V4L2_PIX_FMT_YUYV;
+        v4l2_ctx.field = V4L2_FIELD_INTERLACED;
         
-        mpp_enc_data.fp_outputx = fopen("/tmp/output1.yuv", "wb+");
-        mpp_enc_data.fp_output = fopen("/tmp/output1.h264", "wb+");
         mpp_enc_data.write_frame = write_frame;
 
 
         open_device("/dev/video0",&v4l2_ctx);
-        init_device(&v4l2_ctx);
-        init_rtmp_streamer();
-
+        init_device(&v4l2_ctx);  
         init_mpp(&mpp_enc_data);
         start_capturing(&v4l2_ctx);
+        write_h264_para_file(&streamer_ctx);
+        init_rtmp_streamer();
   
         main_loop(&v4l2_ctx);
 
@@ -105,7 +117,6 @@ void stop(V4l2Context* ctx)
 
     free(ctx->buffers);
     close(ctx->fd);
-    
 }
 
 
