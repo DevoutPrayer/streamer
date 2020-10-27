@@ -6,8 +6,8 @@ LDFLAGS	:= $(shell pkg-config --libs rockchip_mpp) -lavformat -lavcodec -lavutil
 
 
 
-m_streamer : streamer.o rtmp.o v4l2.o mpp.o
-	$(CC) -o streamer streamer.o rtmp.o v4l2.o mpp.o $(LDFLAGS)
+m_streamer : streamer.o rtmp.o v4l2.o mpp.o 
+	$(CC) -o streamer streamer.o rtmp.o v4l2.o mpp.o  $(LDFLAGS)
 streamer.o : streamer.c
 	$(CC) -c $(CFLAGS) streamer.c
 rtmp.o : rtmp.c
@@ -18,8 +18,6 @@ mpp.o : mpp.c
 	$(CC) -c $(CFLAGS) mpp.c
 
 all : m_streamer 
-
-
 
 clean :
 	rm *.o

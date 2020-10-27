@@ -1,4 +1,11 @@
+#include <libavformat/avformat.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/time.h>
+#include <libavcodec/avcodec.h>
+#include <string.h>
+#include <stdlib.h>
 #include "rtmp.h"
+                
 static AVPacket pkt;
 static char *outfile_name = "rtmp://192.168.2.213:1935/live/room1";
 static AVOutputFormat *ofmt = NULL;
@@ -10,6 +17,7 @@ static int videoindex=0;
 static int frame_index=0;
 static int64_t start_time=0;
 static char *infile_name = "/tmp/output.h264";
+static int ceshi;
 
 // int main(int argc,char* argv[])
 // {
@@ -108,7 +116,7 @@ int write_frame(uint8_t*data,int size)
         pkt.size = size;
         pkt.data = data;
         pkt.flags = 0x01;
-        // pkt.stream_index = 0;
+        pkt.stream_index = 0;
         // pkt.duration = AV_TIME_BASE*1/20000;
         // pkt.dts = frame_index*pkt.duration;
         // pkt.pts = pkt.dts;
@@ -121,6 +129,14 @@ int write_frame(uint8_t*data,int size)
         }
         return 0;
 }
+enum AVPixelFormat get_format(struct AVCodecContext *s, const enum AVPixelFormat * fmt)
+{
+        printf("77888\n");
+        fmt = &(s->pix_fmt);
+        return s->pix_fmt;
+}
+
+
 int init_rtmp_streamer()
 {
         int ret;
@@ -162,18 +178,54 @@ int init_rtmp_streamer()
         }
         AVCodecContext *codec_ctx;
         codec_ctx = avcodec_alloc_context3(0);
-        avcodec_set_dimensions(codec_ctx,680,480);
-        codec_ctx->bit_rate = 0x1c;
+        
         codec_ctx->codec_type = AVMEDIA_TYPE_VIDEO;
-        codec_ctx->pix_fmt =  AV_PIX_FMT_YUV420P;
+        codec_ctx->bit_rate = 0x1c;
+        codec_ctx->width = 640;
+        codec_ctx->height = 480;
+        //codec_ctx->coded_width = 0x12345678;
+
+        codec_ctx->coded_height = ifmt_ctx->streams[0]->codec->coded_height;
+        //avcodec_set_dimensions(codec_ctx,640,480);
+        codec_ctx->gop_size = 85;
+        codec_ctx->pix_fmt = 35;
+        codec_ctx->max_b_frames = 480;
+        codec_ctx->get_format = get_format;
+        printf("---------size = %d---------\n",ifmt_ctx->streams[0]->codec->coded_width);
+        printf("---------size = %d---------\n",ifmt_ctx->streams[0]->codec->coded_height);
+        for(int i = 0; i<60;i++)
+        {
+                printf("\n%3d-%3d:",i*10,i*10+10);
+                for(int j=0;j<10;j++)
+                {
+                        printf("%.2x ",*((char *)(codec_ctx)+10*i+j));
+                }
+        }
+        //00 0b d8 99
+        // 
+        // codec_ctx->bit_rate = 0x1c;
+        // codec_ctx->codec_type = AVMEDIA_TYPE_VIDEO;
+        // codec_ctx->pix_fmt =  AV_PIX_FMT_YUV420P;
+        // codec_ctx->codec_id = AV_CODEC_ID_H264;
+        // codec_ctx->profile = 100;
+        // codec_ctx->level = -99;
+        // codec_ctx->debug = FF_DEBUG_BUGS;
+        // codec_ctx->colorspace = ifmt_ctx->streams[0]->codec->colorspace;
+        // codec_ctx->color_primaries = ifmt_ctx->streams[0]->codec->color_primaries;
+        // codec_ctx->color_trc = ifmt_ctx->streams[0]->codec->color_trc;
+        // codec_ctx->color_range = ifmt_ctx->streams[0]->codec->color_range;
+        // codec_ctx->slices = ifmt_ctx->streams[0]->codec->slices;
+        // codec_ctx->extradata = ifmt_ctx->streams[0]->codec->extradata;
+        // codec_ctx->extradata_size = ifmt_ctx->streams[0]->codec->extradata_size;
+        // codec_ctx->code
         out_stream->codec = codec_ctx;
         
-        ret = avcodec_copy_context(out_stream->codec,ifmt_ctx->streams[0]->codec);
-        if(ret < 0)
-        {
-                printf("Fail to copy context from out stream to input stream!\n");
-                goto end;
-        }
+        // ret = avcodec_copy_context(out_stream->codec,ifmt_ctx->streams[0]->codec);
+        // if(ret < 0)
+        // {
+        //         printf("Fail to copy context from out stream to input stream!\n");
+        //         goto end;
+        // }
         
 
         out_stream->codec->codec_tag = 0;
