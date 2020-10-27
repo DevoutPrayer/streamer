@@ -30,6 +30,7 @@ void write_h264_para_file(StreamerContext *ctx)
         ctx->mpp_enc_data->fp_output = fopen("/tmp/output.h264", "wb+");
         write_header(ctx->mpp_enc_data);
         fclose(ctx->mpp_enc_data->fp_output);
+        ctx->mpp_enc_data->fp_output = NULL;
 }
 
 void stop(V4l2Context*);

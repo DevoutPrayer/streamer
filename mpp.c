@@ -267,10 +267,10 @@ mdddd:
                 void *ptr   = mpp_packet_get_pos(packet);
                 size_t len  = mpp_packet_get_length(packet);
                 mpp_enc_data->pkt_eos = mpp_packet_get_eos(packet);
-                if (mpp_enc_data->fp_output)
-                {
-                	fwrite(ptr, 1, len, mpp_enc_data->fp_output);   
-                }
+                // if (mpp_enc_data->fp_output)
+                // {
+                // 	fwrite(ptr, 1, len, mpp_enc_data->fp_output);   
+                // }
                 if(mpp_enc_data->write_frame)
                         if(!(mpp_enc_data->write_frame)(ptr,len))
                                         printf("------------sendok!\n");
