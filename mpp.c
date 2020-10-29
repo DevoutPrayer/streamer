@@ -32,7 +32,7 @@ void init_mpp(MpiEncData *mpp_enc_data)
 		goto MPP_INIT_OUT;
 	}
 
-	mpp_enc_data->fps = 20;
+	mpp_enc_data->fps = 30;
 	mpp_enc_data->gop = 60;
 	mpp_enc_data->bps = mpp_enc_data->width * mpp_enc_data->height / 8 * mpp_enc_data->fps;
 
