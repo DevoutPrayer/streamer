@@ -15,7 +15,6 @@
 #include "streamer.h"
 #include "v4l2.h"
 #include "mpp.h"
-#include "global.h"
 
 MpiEncData          mpp_enc_data;
 
@@ -34,7 +33,7 @@ void write_h264_para_file(StreamerContext *ctx)
 }
 
 void stop(V4l2Context*);
-int main()
+int main(int argc,char* argv[])
 {
         StreamerContext     streamer_ctx;
         V4l2Context         v4l2_ctx;
@@ -59,7 +58,7 @@ int main()
         init_mpp(&mpp_enc_data);
         start_capturing(&v4l2_ctx);
         write_h264_para_file(&streamer_ctx);
-        init_rtmp_streamer();
+        init_rtmp_streamer(argv[1]);
   
         main_loop(&v4l2_ctx);
 

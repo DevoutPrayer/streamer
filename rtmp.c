@@ -7,7 +7,7 @@
 #include "rtmp.h"
                 
 static AVPacket pkt;
-static char *outfile_name = "rtmp://192.168.2.213:1935/live/room1";
+static char *outfile_name = "rtmp://192.168.1.165:1935/live/room1";
 static AVOutputFormat *ofmt = NULL;
 static AVFormatContext *ofmt_ctx = NULL;
 static AVFormatContext *ifmt_ctx = NULL;
@@ -137,11 +137,11 @@ enum AVPixelFormat get_format(struct AVCodecContext *s, const enum AVPixelFormat
 }
 
 
-int init_rtmp_streamer()
+int init_rtmp_streamer(char* stream)
 {
         int ret;
         av_register_all();
-
+outfile_name=stream;
         if((ret = avformat_network_init()) < 0)
         {
                 fprintf(stderr, "avformat_network_init failed!");
