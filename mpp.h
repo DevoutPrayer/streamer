@@ -15,7 +15,10 @@
 #include <string.h>
 #include <errno.h>
 #include <rockchip/rk_mpi.h>
-
+#ifdef __cplusplus
+        extern "C"
+        {
+#endif
 
 #define MPP_ALIGN(x, a)         (((x)+(a)-1)&~((a)-1))
 #define CAM_W 640
@@ -73,7 +76,9 @@ _Bool write_header(MpiEncData *mpp_enc_data);
 extern int write_frame(uint8_t*data,int size);
 
 
-
+#ifdef __cplusplus
+        }
+#endif
 
 
 #endif /* !_MPP_H */

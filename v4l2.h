@@ -1,5 +1,9 @@
 #ifndef _V4L2_H 
 #define _V4L2_H
+#ifdef __cplusplus
+        extern "C"
+        {
+#endif
 #include <stddef.h>
 #include <stdint.h>
 #include <linux/videodev2.h>
@@ -42,5 +46,7 @@ int init_read(unsigned int buffer_size,V4l2Context *ctx);
 int read_frame(V4l2Context *ctx);
 int start_capturing(V4l2Context *ctx);
 void main_loop(V4l2Context *ctx);
-
+#ifdef __cplusplus
+        }
+#endif
 #endif /* !_V4L2_H */

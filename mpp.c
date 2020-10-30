@@ -267,11 +267,11 @@ mdddd:
                 void *ptr   = mpp_packet_get_pos(packet);
                 size_t len  = mpp_packet_get_length(packet);
                 mpp_enc_data->pkt_eos = mpp_packet_get_eos(packet);
-                // if (mpp_enc_data->fp_output)
-                // {
-                // 	fwrite(ptr, 1, len, mpp_enc_data->fp_output);   
-                // }
-                if(mpp_enc_data->write_frame)
+                if (mpp_enc_data->fp_output)
+                {
+                	fwrite(ptr, 1, len, mpp_enc_data->fp_output);   
+                }
+                if(!mpp_enc_data->fp_output&&mpp_enc_data->write_frame)
                         if(!(mpp_enc_data->write_frame)(ptr,len))
                                         printf("------------sendok!\n");
 
@@ -287,11 +287,11 @@ mdddd:
         }
         else
                 goto mdddd;
-        // if (mpp_enc_data->num_frames && mpp_enc_data->frame_count >= mpp_enc_data->num_frames)
-        // {
-        // 	printf("encode max %d frames", mpp_enc_data->frame_count);
-        // 	return 0;
-        // }
+        if (mpp_enc_data->num_frames && mpp_enc_data->frame_count >= mpp_enc_data->num_frames)
+        {
+        	printf("encode max %d frames", mpp_enc_data->frame_count);
+        	return 0;
+        }
         if (mpp_enc_data->frm_eos && mpp_enc_data->pkt_eos)
                 return 0;
     

@@ -220,12 +220,12 @@ outfile_name=stream;
         // codec_ctx->code
         out_stream->codec = codec_ctx;
         
-        // ret = avcodec_copy_context(out_stream->codec,ifmt_ctx->streams[0]->codec);
-        // if(ret < 0)
-        // {
-        //         printf("Fail to copy context from out stream to input stream!\n");
-        //         goto end;
-        // }
+        ret = avcodec_copy_context(out_stream->codec,ifmt_ctx->streams[0]->codec);
+        if(ret < 0)
+        {
+                printf("Fail to copy context from out stream to input stream!\n");
+                goto end;
+        }
         
 
         out_stream->codec->codec_tag = 0;
