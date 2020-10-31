@@ -1,6 +1,44 @@
 #include "mpp.h"
+static void mpp_close(MppContext* ctx);
+static void init_mpp(MppContext *mpp_enc_data);
+static _Bool write_header(MppContext *mpp_enc_data);
+static _Bool process_image(uint8_t *p, int size,MppContext *mpp_enc_data);
 
-void init_mpp(MpiEncData *mpp_enc_data)
+MppContext * alloc_mpp_context()
+{
+        MppContext *ctx = (MppContext *)malloc(sizeof(MppContext));
+        ctx->init_mpp = init_mpp;
+        ctx->close = mpp_close;
+        ctx->write_header = write_header;
+        ctx->process_image = process_image;
+        return ctx;
+}
+
+static void mpp_close(MppContext* ctx)
+{
+        MPP_RET ret = MPP_OK;
+        ret = ctx->mpi->reset(ctx->ctx);
+        if (ret)
+        {
+                printf("mpi->reset failed\n");
+        }
+
+        if (ctx->ctx)
+        {
+                mpp_destroy(ctx->ctx);
+                ctx->ctx = NULL;
+        }
+
+        if (ctx->frm_buf)
+        {
+                mpp_buffer_put(ctx->frm_buf);
+                ctx->frm_buf = NULL;
+        }
+        free(ctx);
+    
+}
+
+static void init_mpp(MppContext *mpp_enc_data)
 {
         MPP_RET ret = MPP_OK;
         mpp_enc_data->width = 640;
@@ -179,7 +217,7 @@ MPP_INIT_OUT:
         printf("init mpp failed!\n");
 }
 
-_Bool write_header(MpiEncData *mpp_enc_data)
+static _Bool write_header(MppContext *mpp_enc_data)
 {
         int ret;
         if (mpp_enc_data->type == MPP_VIDEO_CodingAVC)
@@ -213,7 +251,7 @@ _Bool write_header(MpiEncData *mpp_enc_data)
         return 1;
 }
 
-_Bool process_image(uint8_t *p, int size,MpiEncData *mpp_enc_data)
+static _Bool process_image(uint8_t *p, int size,MppContext *mpp_enc_data)
 {
 //     if(mpp_enc_data->fp_outputx)
 //     {
