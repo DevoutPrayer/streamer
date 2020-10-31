@@ -11,7 +11,61 @@
 #include <errno.h>
 #include "v4l2.h"
 
-int xioctl(int fh, int request, void *arg)
+
+static int open_device(char * device,V4l2Context *ctx);
+static int v4l2_close(V4l2Context *ctx);
+static int start_capturing(V4l2Context *ctx);
+static int init_device(V4l2Context *ctx);
+static void main_loop(V4l2Context *ctx);
+
+static int xioctl(int fh, int request, void *arg);
+static int init_mmap(V4l2Context *ctx);
+static int init_read(unsigned int buffer_size,V4l2Context *ctx);
+
+static int read_frame(V4l2Context *ctx);
+
+static int v4l2_close(V4l2Context *ctx)
+{
+        enum v4l2_buf_type type;
+        unsigned int i;
+
+        switch (ctx->io_method)
+        {
+        case IO_METHOD_READ:
+                /* Nothing to do. */
+                break;
+        case IO_METHOD_MMAP:
+                type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                xioctl(ctx->fd, VIDIOC_STREAMOFF, &type);
+                break;
+        }
+        switch (ctx->io_method)
+        {
+        case IO_METHOD_READ:
+                free(ctx->buffers[0].start);
+                break;
+        case IO_METHOD_MMAP:
+                for (i = 0; i < ctx->n_buffers; ++i)
+                munmap(ctx->buffers[i].start, ctx->buffers[i].length);
+                break;
+        }
+        free(ctx->buffers);
+        close(ctx->fd);
+        return 0;
+}
+
+V4l2Context * alloc_v4l2_context()
+{
+        V4l2Context * ctx=(V4l2Context *)malloc(sizeof(V4l2Context));
+        ctx->open_device = open_device;
+        ctx->init_device = init_device;
+        ctx->start_capturing = start_capturing;
+        ctx->main_loop = main_loop;
+        ctx->close = v4l2_close;
+        return ctx;
+}
+
+static int xioctl(int fh, int request, void *arg)
 {
         int r;
         do
@@ -22,7 +76,7 @@ int xioctl(int fh, int request, void *arg)
         return r;
 }
 
-int open_device(char * device,V4l2Context *ctx)
+static int open_device(char * device,V4l2Context *ctx)
 { 
         ctx->dev_name = device;
         int ret;
@@ -48,9 +102,8 @@ int open_device(char * device,V4l2Context *ctx)
         return 0;
 }
 
-int init_device(V4l2Context *ctx)
+static int init_device(V4l2Context *ctx)
 {
-
         struct v4l2_capability cap;
         struct v4l2_cropcap cropcap;
         struct v4l2_crop crop;
@@ -158,7 +211,7 @@ int init_device(V4l2Context *ctx)
                 return init_read(fmt.fmt.pix.sizeimage,ctx);
 }
 
-void main_loop(V4l2Context *ctx)
+static void main_loop(V4l2Context *ctx)
 {
         int fd = ctx->fd;
         int r;
@@ -196,7 +249,7 @@ void main_loop(V4l2Context *ctx)
 
 
 
-int init_mmap(V4l2Context *ctx)
+static int init_mmap(V4l2Context *ctx)
 {        
         struct v4l2_requestbuffers req;
         memset(&req, 0, sizeof(req));
@@ -257,7 +310,7 @@ int init_mmap(V4l2Context *ctx)
         return 0;
 }
 
-int init_read(unsigned int buffer_size,V4l2Context *ctx)
+static int init_read(unsigned int buffer_size,V4l2Context *ctx)
 {
         ctx->buffers = (struct buffer*)calloc(1, sizeof(struct buffer));
 
@@ -280,7 +333,7 @@ int init_read(unsigned int buffer_size,V4l2Context *ctx)
 }
 
 
-int start_capturing(V4l2Context *ctx)
+static int start_capturing(V4l2Context *ctx)
 {
         unsigned int i;
         enum v4l2_buf_type type;
@@ -317,7 +370,7 @@ int start_capturing(V4l2Context *ctx)
         return 0;
 }
 
-int read_frame(V4l2Context *ctx)
+static int read_frame(V4l2Context *ctx)
 {
         struct v4l2_buffer buf;
         switch (ctx->io_method)

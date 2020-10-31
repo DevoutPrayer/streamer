@@ -22,7 +22,7 @@ struct buffer
                 
 typedef struct 
 {
-        int             *fd;
+        int64_t         *fd;
         char            *dev_name;
         enum IO_METHOD  io_method;
         struct buffer   *buffers;
@@ -33,19 +33,18 @@ typedef struct
         uint32_t        pixelformat;
         uint32_t        field;
 
-
+        /*call back function*/
         _Bool (*process_image)(uint8_t *p, int size);
+        /*function pointer*/
+        int (*open_device)(char * device,void *ctx);
+        int (*init_device)(void *ctx);
+        int (*start_capturing)(void *ctx);
+        void (*main_loop)(void *ctx);
+        int (*close)(void *ctx);
 
 }V4l2Context;
 
-int xioctl(int fh, int request, void *arg);
-int open_device(char * device,V4l2Context *ctx);
-int init_device(V4l2Context *ctx);
-int init_mmap(V4l2Context *ctx);
-int init_read(unsigned int buffer_size,V4l2Context *ctx);
-int read_frame(V4l2Context *ctx);
-int start_capturing(V4l2Context *ctx);
-void main_loop(V4l2Context *ctx);
+V4l2Context * alloc_v4l2_context(); 
 #ifdef __cplusplus
         }
 #endif
