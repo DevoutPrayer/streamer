@@ -1,7 +1,7 @@
 #
 #
 CC	:= aarch64-linux-gnu-gcc
-CFLAGS	:= $(shell pkg-config --cflags rockchip_mpp) 
+CFLAGS	:= $(shell pkg-config --cflags rockchip_mpp) -w
 LDFLAGS	:= $(shell pkg-config --libs rockchip_mpp) -lavformat -lavcodec -lavutil
 
 
