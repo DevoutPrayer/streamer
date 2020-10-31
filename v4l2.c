@@ -51,6 +51,7 @@ static int v4l2_close(V4l2Context *ctx)
         }
         free(ctx->buffers);
         close(ctx->fd);
+        free(ctx);
         return 0;
 }
 
