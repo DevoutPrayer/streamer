@@ -10,7 +10,7 @@
 typedef struct
 {
         V4l2Context             *v4l2_ctx;
-        MpiEncData              *mpp_enc_data;
+        MppContext              *mpp_enc_data;
 }StreamerContext;
 #ifdef __cplusplus
         }
