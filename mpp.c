@@ -41,8 +41,6 @@ static void mpp_close(MppContext* ctx)
 static void init_mpp(MppContext *mpp_enc_data)
 {
         MPP_RET ret = MPP_OK;
-        mpp_enc_data->width = 640;
-	mpp_enc_data->height = 480;
         mpp_enc_data->type = MPP_VIDEO_CodingAVC;
         mpp_enc_data->fmt = MPP_FMT_YUV422_YUYV;
         mpp_enc_data->hor_stride = MPP_ALIGN(mpp_enc_data->width, 16);
@@ -69,10 +67,8 @@ static void init_mpp(MppContext *mpp_enc_data)
 		printf("mpp_init failed ret %d\n", ret);
 		goto MPP_INIT_OUT;
 	}
-
-	mpp_enc_data->fps = 30;
-	mpp_enc_data->gop = 60;
-	mpp_enc_data->bps = mpp_enc_data->width * mpp_enc_data->height / 8 * mpp_enc_data->fps;
+        /*Configure Input Control*/
+	
 
 	mpp_enc_data->prep_cfg.change           = MPP_ENC_PREP_CFG_CHANGE_INPUT |
                                                   MPP_ENC_PREP_CFG_CHANGE_ROTATION |
