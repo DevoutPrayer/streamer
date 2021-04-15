@@ -1,13 +1,17 @@
 #
 #
-CC	:= aarch64-linux-gnu-gcc
-CFLAGS	:= $(shell pkg-config --cflags rockchip_mpp) -w
-LDFLAGS	:= $(shell pkg-config --libs rockchip_mpp) -lavformat -lavcodec -lavutil
-
-
+ifdef cross-compile
+	CC	:= aarch64-none-linux-gnu-master/bin/aarch64-none-linux-gnu-gcc
+	CFLAGS	:= -I rkmpp/inc -I ffmpeg/inc -w 
+	LDFLAGS	:= -L rkmpp/lib -L ffmpeg/lib  -lrockchip_mpp -lavformat -lavcodec -lavutil -lpthread -Wl,-rpath ffmpeg/lib 
+else
+	CC	:= aarch64-linux-gnu-gcc
+	CFLAGS	:= $(shell pkg-config --cflags rockchip_mpp) -w
+	LDFLAGS	:= $(shell pkg-config --libs rockchip_mpp) -lavformat -lavcodec -lavutil
+endif
 
 m_streamer : streamer.o rtmp.o v4l2.o mpp.o 
-	$(CC) -o streamer streamer.o rtmp.o v4l2.o mpp.o  $(LDFLAGS)
+	$(CC) -o streamer streamer.o rtmp.o v4l2.o mpp.o  $(LDFLAGS)  
 streamer.o : streamer.c
 	$(CC) -c $(CFLAGS) streamer.c
 rtmp.o : rtmp.c
@@ -17,18 +21,7 @@ v4l2.o : v4l2.c
 mpp.o : mpp.c
 	$(CC) -c $(CFLAGS) mpp.c
 
-streamer.so :  rtmp.so v4l2.so mpp.so
-	$(CC) -shared -o libstream.so rtmp.so v4l2.so mpp.so $(LDFLAGS)
-v4l2.so : v4l2.c
-	$(CC) -fPIC -c $(CFLAGS) v4l2.c -o v4l2.so
-mpp.so : mpp.c
-	$(CC) -fPIC -c $(CFLAGS) mpp.c -o mpp.so
-rtmp.so : rtmp.c
-	$(CC) -fPIC -c $(CFLAGS) rtmp.c -o rtmp.so     
 
-
-
-all : m_streamer streamer.so
+all : m_streamer 
 clean :
 	rm *.o
-	rm *.so

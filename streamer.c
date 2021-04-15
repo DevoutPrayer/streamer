@@ -53,12 +53,14 @@ int main(int argc,char* argv[])
         mpp_ctx->write_frame            = write_frame;
 
         /*Begin*/
-        v4l2_ctx->open_device("/dev/video0",v4l2_ctx);
+
+        v4l2_ctx->open_device(argv[1],v4l2_ctx);
         v4l2_ctx->init_device(v4l2_ctx);  
         mpp_ctx->init_mpp(mpp_ctx);
         v4l2_ctx->start_capturing(v4l2_ctx);
         write_h264_para_file(&streamer_ctx);
         init_rtmp_streamer(argv[1]);
+        init_rtmp_streamer(argv[2]);
   
         v4l2_ctx->main_loop(v4l2_ctx);
 
