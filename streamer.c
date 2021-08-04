@@ -18,17 +18,6 @@ _Bool m_process_image(uint8_t *p, int size)
         return mpp_ctx->process_image(p,size,mpp_ctx);
 }
 
-void write_h264_para_file(StreamerContext *ctx)
-{
-        ctx->mpp_enc_data->fp_output = fopen("/tmp/output.h264", "wb+");
-        ctx->mpp_enc_data->write_header(ctx->mpp_enc_data);
-        ctx->mpp_enc_data->num_frames = 30;
-        ctx->v4l2_ctx->main_loop(ctx->v4l2_ctx);
-        ctx->mpp_enc_data->num_frames = 0;
-        fclose(ctx->mpp_enc_data->fp_output);
-        ctx->mpp_enc_data->fp_output = NULL;
-}
-
 int main(int argc,char* argv[])
 {
         StreamerContext                 streamer_ctx;
@@ -52,13 +41,14 @@ int main(int argc,char* argv[])
 	mpp_ctx->bps                    = mpp_ctx->width * mpp_ctx->height / 8 * mpp_ctx->fps*2;
         mpp_ctx->write_frame            = write_frame;
 
+        SpsHeader sps_header;
         /*Begin*/
         v4l2_ctx->open_device(argv[1],v4l2_ctx);
         v4l2_ctx->init_device(v4l2_ctx);  
         mpp_ctx->init_mpp(mpp_ctx);
         v4l2_ctx->start_capturing(v4l2_ctx);
-        write_h264_para_file(&streamer_ctx);
-        init_rtmp_streamer(argv[2]);
+        mpp_ctx->write_header(mpp_ctx,&sps_header);
+        init_rtmp_streamer(argv[2],sps_header.data,sps_header.size);
   
         v4l2_ctx->main_loop(v4l2_ctx);
 
