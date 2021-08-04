@@ -1,7 +1,7 @@
 #include "mpp.h"
 static void mpp_close(MppContext* ctx);
 static void init_mpp(MppContext *mpp_enc_data);
-static _Bool write_header(MppContext *mpp_enc_data);
+static _Bool write_header(MppContext *mpp_enc_data,SpsHeader *sps_header);
 static _Bool process_image(uint8_t *p, int size,MppContext *mpp_enc_data);
 
 MppContext * alloc_mpp_context()
@@ -213,7 +213,7 @@ MPP_INIT_OUT:
         printf("init mpp failed!\n");
 }
 
-static _Bool write_header(MppContext *mpp_enc_data)
+static _Bool write_header(MppContext *mpp_enc_data,SpsHeader *sps_header)
 {
         int ret;
         if (mpp_enc_data->type == MPP_VIDEO_CodingAVC)
@@ -229,18 +229,11 @@ static _Bool write_header(MppContext *mpp_enc_data)
 		/* get and write sps/pps for H.264 */
 		if (packet)
 		{
-
 			void *ptr   = mpp_packet_get_pos(packet);
 			size_t len  = mpp_packet_get_length(packet);
-
-			if (mpp_enc_data->fp_output)
-                        {
-                                fwrite(ptr, 1, len, mpp_enc_data->fp_output);
-                                return 0;
-                        }
-                        // if(mpp_enc_data->write_frame)
-                        //         if(!(mpp_enc_data->write_frame)(ptr,len))
-                        //                         printf("------------sendok!\n");
+			sps_header->data = (uint8_t*)malloc(len);
+			sps_header->size = len;
+			memcpy(sps_header->data,ptr,len);
 			packet = NULL;
 		}
 	}
@@ -248,86 +241,73 @@ static _Bool write_header(MppContext *mpp_enc_data)
 }
 
 static _Bool process_image(uint8_t *p, int size,MppContext *mpp_enc_data)
-{
-//     if(mpp_enc_data->fp_outputx)
-//     {
-//         printf("ok\n");
-//         //fwrite(p, 1, size, mpp_enc_data.fp_outputx);
-//     }
-    
+{   
 	MPP_RET ret = MPP_OK;
-    
-     
+	MppFrame frame = NULL;
+	MppPacket packet = NULL;
 
-        MppFrame frame = NULL;
-        MppPacket packet = NULL;
+	void *buf = mpp_buffer_get_ptr(mpp_enc_data->frm_buf);
+	//TODO: improve performance here?
+	memcpy(buf, p, size);
+	ret = mpp_frame_init(&frame);
+	if (ret)
+	{
+		printf("mpp_frame_init failed\n");
+		return 1;
+	}
 
-        void *buf = mpp_buffer_get_ptr(mpp_enc_data->frm_buf);
-        //TODO: improve performance here?
-        memcpy(buf, p, size);
-        ret = mpp_frame_init(&frame);
-        if (ret)
-        {
-                printf("mpp_frame_init failed\n");
-                return 1;
-        }
+	mpp_frame_set_width(frame, mpp_enc_data->width);
+	mpp_frame_set_height(frame, mpp_enc_data->height);
+	mpp_frame_set_hor_stride(frame, mpp_enc_data->hor_stride);
+	mpp_frame_set_ver_stride(frame, mpp_enc_data->ver_stride);
+	mpp_frame_set_fmt(frame, mpp_enc_data->fmt);
+	mpp_frame_set_buffer(frame, mpp_enc_data->frm_buf);
+	mpp_frame_set_eos(frame, mpp_enc_data->frm_eos);
 
-        mpp_frame_set_width(frame, mpp_enc_data->width);
-        mpp_frame_set_height(frame, mpp_enc_data->height);
-        mpp_frame_set_hor_stride(frame, mpp_enc_data->hor_stride);
-        mpp_frame_set_ver_stride(frame, mpp_enc_data->ver_stride);
-        mpp_frame_set_fmt(frame, mpp_enc_data->fmt);
-        mpp_frame_set_buffer(frame, mpp_enc_data->frm_buf);
-        mpp_frame_set_eos(frame, mpp_enc_data->frm_eos);
-
-        ret = mpp_enc_data->mpi->encode_put_frame(mpp_enc_data->ctx, frame);
-        if (ret)
-        {
-                printf("mpp encode put frame failed\n");
-                return 1;
-        }
+	ret = mpp_enc_data->mpi->encode_put_frame(mpp_enc_data->ctx, frame);
+	if (ret)
+	{
+		printf("mpp encode put frame failed\n");
+		return 1;
+	}
   
 mdddd:
-        ret = mpp_enc_data->mpi->encode_get_packet(mpp_enc_data->ctx, &packet);
-        if (ret)
-        {
-                printf("mpp encode get packet failed\n");
-                return 1;
-        }
-    
-        if (packet)
-        {
-                // write packet to file here
-                void *ptr   = mpp_packet_get_pos(packet);
-                size_t len  = mpp_packet_get_length(packet);
-                mpp_enc_data->pkt_eos = mpp_packet_get_eos(packet);
-                if (mpp_enc_data->fp_output)
-                {
-                	fwrite(ptr, 1, len, mpp_enc_data->fp_output);   
-                }
-                if(!mpp_enc_data->fp_output&&mpp_enc_data->write_frame)
-                        if(!(mpp_enc_data->write_frame)(ptr,len))
-                                        printf("------------sendok!\n");
+	ret = mpp_enc_data->mpi->encode_get_packet(mpp_enc_data->ctx, &packet);
+	if (ret)
+	{
+		printf("mpp encode get packet failed\n");
+		return 1;
+	}
 
-                mpp_packet_deinit(&packet);
-                printf("encoded frame %d size %ld\n", mpp_enc_data->frame_count, len);
-                mpp_enc_data->stream_size += len;
-                mpp_enc_data->frame_count++;
+	if (packet)
+	{
+		// write packet to file here
+		void *ptr   = mpp_packet_get_pos(packet);
+		size_t len  = mpp_packet_get_length(packet);
+		mpp_enc_data->pkt_eos = mpp_packet_get_eos(packet);
+		if(mpp_enc_data->write_frame)
+			if(!(mpp_enc_data->write_frame)(ptr,len))
+				printf("------------sendok!\n");
 
-                if (mpp_enc_data->pkt_eos)
-                {
-                        printf("found last packet\n");
-                }
-        }
-        else
-                goto mdddd;
-        if (mpp_enc_data->num_frames && mpp_enc_data->frame_count >= mpp_enc_data->num_frames)
-        {
-        	printf("encode max %d frames", mpp_enc_data->frame_count);
-        	return 0;
-        }
-        if (mpp_enc_data->frm_eos && mpp_enc_data->pkt_eos)
-                return 0;
-    
-        return 1;
+		mpp_packet_deinit(&packet);
+		printf("encoded frame %d size %ld\n", mpp_enc_data->frame_count, len);
+		mpp_enc_data->stream_size += len;
+		mpp_enc_data->frame_count++;
+
+		if (mpp_enc_data->pkt_eos)
+		{
+			printf("found last packet\n");
+		}
+	}
+	else
+		goto mdddd;
+	if (mpp_enc_data->num_frames && mpp_enc_data->frame_count >= mpp_enc_data->num_frames)
+	{
+		printf("encode max %d frames", mpp_enc_data->frame_count);
+		return 0;
+	}
+	if (mpp_enc_data->frm_eos && mpp_enc_data->pkt_eos)
+		return 0;
+
+	return 1;
 }

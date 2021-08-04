@@ -20,6 +20,11 @@
 #define MPP_ALIGN(x, a)         (((x)+(a)-1)&~((a)-1))
 
 typedef struct {
+        uint8_t *data;
+        uint32_t size;
+} SpsHeader;
+
+typedef struct {
         // global flow control flag
         RK_U32 frm_eos;
         RK_U32 pkt_eos;
@@ -62,7 +67,7 @@ typedef struct {
         //function pointer
         void (*init_mpp)(void *mpp_enc_data);
         _Bool (*process_image)(uint8_t *p, int size,void *mpp_enc_data);
-        _Bool (*write_header)(void *mpp_enc_data);
+        _Bool (*write_header)(void *mpp_enc_data,SpsHeader *sps_header);
         void (*close)(void* ctx);
 
 } MppContext;
